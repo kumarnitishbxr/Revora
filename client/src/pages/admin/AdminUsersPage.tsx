@@ -10,6 +10,9 @@ import {
   Mail,
   MapPin,
   Calendar,
+  Eye,
+  Star,
+  Store,
 } from 'lucide-react';
 import { adminService } from '../../services/admin.service';
 import { useToast, useDebounce } from '../../hooks';
@@ -22,6 +25,7 @@ import {
   Input,
   Select,
   PasswordInput,
+  StarRating,
   LoadingSpinner,
   EmptyState,
   ErrorState,
@@ -33,7 +37,7 @@ const createUserSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(10, 'Name must be at least 10 characters')
+    .min(20, 'Name must be at least 20 characters')
     .max(60, 'Name must not exceed 60 characters'),
   email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
   address: z
@@ -62,13 +66,14 @@ export const AdminUsersPage: React.FC = () => {
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | ''>('');
-  const [sortBy, setSortBy] = useState<'createdAt' | 'name' | 'email' | 'role'>('createdAt');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'name' | 'email' | 'address' | 'role'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Create User Modal
+  // User Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<User | null>(null);
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -189,6 +194,7 @@ export const AdminUsersPage: React.FC = () => {
             <option value="createdAt">Date Created</option>
             <option value="name">Name</option>
             <option value="email">Email</option>
+            <option value="address">Address</option>
             <option value="role">Role</option>
           </select>
 
@@ -237,8 +243,10 @@ export const AdminUsersPage: React.FC = () => {
                 <tr>
                   <th className="py-3 px-4">User</th>
                   <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Store Rating</th>
                   <th className="py-3 px-4">Address</th>
                   <th className="py-3 px-4">Joined Date</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -265,6 +273,27 @@ export const AdminUsersPage: React.FC = () => {
                         {formatRoleName(u.role)}
                       </span>
                     </td>
+                    <td className="py-3 px-4">
+                      {u.role === 'STORE_OWNER' ? (
+                        u.storeRating !== null && u.storeRating !== undefined ? (
+                          <div className="flex items-center gap-1.5">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                              {u.storeRating.toFixed(1)} / 5.0
+                            </span>
+                            {u.storeName && (
+                              <span className="text-[10px] text-slate-400 truncate max-w-[100px]">
+                                ({u.storeName})
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">No store yet</span>
+                        )
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">—</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 max-w-xs">
                       <div className="flex items-start gap-1.5 text-slate-600 dark:text-slate-300">
                         <MapPin className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
@@ -276,6 +305,17 @@ export const AdminUsersPage: React.FC = () => {
                         <Calendar className="w-3 h-3 text-slate-400" />
                         <span>{formatDate(u.createdAt)}</span>
                       </div>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUserForDetails(u)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
+                        title="View Full User Details"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Details</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -293,6 +333,95 @@ export const AdminUsersPage: React.FC = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* View User Details Modal */}
+      {selectedUserForDetails && (
+        <Modal
+          isOpen={!!selectedUserForDetails}
+          onClose={() => setSelectedUserForDetails(null)}
+          title="User Account Details"
+          description="Detailed profile and store rating information"
+          footer={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectedUserForDetails(null)}
+            >
+              Close
+            </Button>
+          }
+        >
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="text-slate-400 font-medium block">Full Name</span>
+                <span className="font-semibold text-sm text-slate-800 dark:text-slate-100 block mt-0.5">
+                  {selectedUserForDetails.name}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium block">Role</span>
+                <span
+                  className={`inline-block mt-1 px-2.5 py-0.5 rounded-full font-medium ${getRoleBadgeClass(
+                    selectedUserForDetails.role
+                  )}`}
+                >
+                  {formatRoleName(selectedUserForDetails.role)}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-400 font-medium block">Email</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300 block mt-0.5">
+                  {selectedUserForDetails.email}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-400 font-medium block">Address</span>
+                <span className="text-slate-600 dark:text-slate-300 block mt-0.5">
+                  {selectedUserForDetails.address}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium block">Joined Date</span>
+                <span className="text-slate-600 dark:text-slate-300 block mt-0.5">
+                  {formatDate(selectedUserForDetails.createdAt)}
+                </span>
+              </div>
+            </div>
+
+            {/* Store Owner Rating Card */}
+            {selectedUserForDetails.role === 'STORE_OWNER' && (
+              <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 space-y-2">
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-semibold">
+                  <Store className="w-4 h-4 text-amber-500" />
+                  <span>Store Owner Information</span>
+                </div>
+                {selectedUserForDetails.storeName ? (
+                  <div className="space-y-1 pt-1">
+                    <div className="text-slate-700 dark:text-slate-300">
+                      Store Name: <strong>{selectedUserForDetails.storeName}</strong>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">
+                        Store Rating:
+                      </span>
+                      <StarRating
+                        value={selectedUserForDetails.storeRating || 0}
+                        size="md"
+                        showValue
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 dark:text-slate-400 italic">
+                    This user does not currently have an assigned store in the system.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </Modal>
       )}
 
       {/* Create User Modal */}
@@ -324,7 +453,7 @@ export const AdminUsersPage: React.FC = () => {
       >
         <form onSubmit={handleSubmit(handleCreateUser)} className="space-y-4">
           <Input
-            label="Full Name (10-60 chars)"
+            label="Full Name (20-60 chars)"
             placeholder="Johnathan Doe Representative"
             error={formErrors.name?.message}
             {...register('name')}

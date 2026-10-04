@@ -6,7 +6,7 @@ export const registerSchema = z.object({
     name: z
       .string()
       .trim()
-      .min(10, "Name must be at least 10 characters")
+      .min(20, "Name must be at least 20 characters")
       .max(60, "Name must not exceed 60 characters"),
     email: z.string().trim().toLowerCase().email("Invalid email address"),
     password: z
@@ -47,7 +47,7 @@ export const adminCreateUserSchema = z.object({
     name: z
       .string()
       .trim()
-      .min(10, "Name must be at least 10 characters")
+      .min(20, "Name must be at least 20 characters")
       .max(60, "Name must not exceed 60 characters"),
     email: z.string().trim().toLowerCase().email("Invalid email address"),
     password: z

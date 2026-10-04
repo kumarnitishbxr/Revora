@@ -71,12 +71,44 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction):
           role: true,
           createdAt: true,
           updatedAt: true,
+          ownedStore: {
+            select: {
+              id: true,
+              name: true,
+              ratings: {
+                select: {
+                  rating: true,
+                },
+              },
+            },
+          },
         },
       }),
       prisma.user.count({ where }),
     ]);
 
-    const response = formatPaginatedResponse(users, total, pagination.page, pagination.limit);
+    const formattedUsers = users.map((u) => {
+      let storeRating: number | null = null;
+      let storeName: string | null = null;
+      if (u.role === Role.STORE_OWNER && u.ownedStore) {
+        storeName = u.ownedStore.name;
+        const count = u.ownedStore.ratings.length;
+        storeRating =
+          count > 0
+            ? Number(
+                (u.ownedStore.ratings.reduce((acc, curr) => acc + curr.rating, 0) / count).toFixed(1)
+              )
+            : 0;
+      }
+      const { ownedStore, ...userData } = u;
+      return {
+        ...userData,
+        storeName,
+        storeRating,
+      };
+    });
+
+    const response = formatPaginatedResponse(formattedUsers, total, pagination.page, pagination.limit);
     res.status(200).json({
       success: true,
       ...response,
@@ -107,6 +139,17 @@ export const getUserById = async (
         role: true,
         createdAt: true,
         updatedAt: true,
+        ownedStore: {
+          select: {
+            id: true,
+            name: true,
+            ratings: {
+              select: {
+                rating: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -114,10 +157,30 @@ export const getUserById = async (
       throw ApiError.notFound("User not found");
     }
 
+    let storeRating: number | null = null;
+    let storeName: string | null = null;
+    if (user.role === Role.STORE_OWNER && user.ownedStore) {
+      storeName = user.ownedStore.name;
+      const count = user.ownedStore.ratings.length;
+      storeRating =
+        count > 0
+          ? Number(
+              (user.ownedStore.ratings.reduce((acc, curr) => acc + curr.rating, 0) / count).toFixed(1)
+            )
+          : 0;
+    }
+    const { ownedStore, ...userData } = user;
+
     res.status(200).json({
       success: true,
       message: "User fetched successfully",
-      data: { user },
+      data: {
+        user: {
+          ...userData,
+          storeName,
+          storeRating,
+        },
+      },
     });
   } catch (error) {
     next(error);

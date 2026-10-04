@@ -8,6 +8,8 @@ export interface User {
   role: Role;
   createdAt: string;
   updatedAt: string;
+  storeName?: string | null;
+  storeRating?: number | null;
 }
 
 export interface Store {

@@ -20,11 +20,26 @@ const app = express();
 // Security Headers
 app.use(helmet());
 
-// CORS configuration (strictly uses CLIENT_URL, supports cookies with credentials)
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+// CORS configuration (supports CLIENT_URL and local dev ports with credentials)
+const configuredClientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+const allowedOrigins = new Set([
+  configuredClientUrl,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+]);
+
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
   })
 );

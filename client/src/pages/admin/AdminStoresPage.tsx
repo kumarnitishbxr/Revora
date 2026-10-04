@@ -234,6 +234,7 @@ export const AdminStoresPage: React.FC = () => {
           >
             <option value="createdAt">Date Created</option>
             <option value="name">Store Name</option>
+            <option value="email">Email</option>
             <option value="address">Address</option>
           </select>
 
