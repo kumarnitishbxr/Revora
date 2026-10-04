@@ -98,11 +98,11 @@ export const OwnerDashboardPage: React.FC = () => {
 
           <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 shrink-0">
             <div>
-              <div className="text-3xl font-black text-white">{averageRating.toFixed(1)}</div>
+              <div className="text-3xl font-black text-white">{(averageRating ?? 0).toFixed(1)}</div>
               <div className="text-[11px] text-slate-300">Average Rating</div>
             </div>
             <div className="flex flex-col items-center">
-              <StarRating value={averageRating} size="md" />
+              <StarRating value={averageRating ?? 0} size="md" />
               <div className="text-[11px] text-amber-300 mt-1">
                 {ratingCount} customer {ratingCount === 1 ? 'review' : 'reviews'}
               </div>
@@ -116,7 +116,7 @@ export const OwnerDashboardPage: React.FC = () => {
         <div className="space-y-4">
           <StatCard
             title="Overall Score"
-            value={`${averageRating.toFixed(1)} / 5.0`}
+            value={`${(averageRating ?? 0).toFixed(1)} / 5.0`}
             icon={<Star className="w-5 h-5 fill-amber-400 text-amber-400" />}
             description="Aggregated customer score"
           />

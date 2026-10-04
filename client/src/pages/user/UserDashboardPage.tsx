@@ -223,7 +223,7 @@ export const UserDashboardPage: React.FC = () => {
                     </h3>
                     <div className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span>{store.overallRating.toFixed(1)}</span>
+                      <span>{(store.overallRating ?? 0).toFixed(1)}</span>
                     </div>
                   </div>
 

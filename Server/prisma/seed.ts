@@ -4,12 +4,21 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error("DATABASE_URL is not defined in .env");
+  throw new Error("DATABASE_URL or DIRECT_URL is not defined in .env");
 }
 
-const pool = new pg.Pool({ connectionString });
+const isRemoteDb =
+  connectionString.includes("supabase.co") ||
+  connectionString.includes("supabase.com") ||
+  connectionString.includes("sslmode=require") ||
+  process.env.NODE_ENV === "production";
+
+const pool = new pg.Pool({
+  connectionString,
+  ssl: isRemoteDb ? { rejectUnauthorized: false } : undefined,
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 

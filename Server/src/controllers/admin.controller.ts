@@ -300,6 +300,7 @@ export const getStores = async (req: Request, res: Response, next: NextFunction)
       delete (storeData as any).ratings;
       return {
         ...storeData,
+        overallRating: averageRating,
         averageRating,
         totalRatings: count,
       };

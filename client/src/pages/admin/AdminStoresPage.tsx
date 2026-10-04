@@ -320,9 +320,9 @@ export const AdminStoresPage: React.FC = () => {
                       <div className="flex items-center gap-1.5">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                         <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {s.overallRating.toFixed(1)}
+                          {(s.overallRating ?? (s as any).averageRating ?? 0).toFixed(1)}
                         </span>
-                        <span className="text-slate-400 text-[11px]">({s.totalRatings})</span>
+                        <span className="text-slate-400 text-[11px]">({s.totalRatings ?? 0})</span>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
