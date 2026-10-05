@@ -1,7 +1,8 @@
-export function formatDate(dateString: string | undefined): string {
+export function formatDate(dateString?: string | null): string {
   if (!dateString) return '—';
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
@@ -12,10 +13,11 @@ export function formatDate(dateString: string | undefined): string {
   }
 }
 
-export function formatDateTime(dateString: string | undefined): string {
+export function formatDateTime(dateString?: string | null): string {
   if (!dateString) return '—';
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
@@ -33,7 +35,12 @@ export function formatRating(rating: number | undefined | null): string {
   return rating.toFixed(1);
 }
 
-export function getInitials(name: string | undefined): string {
+export function formatNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null || isNaN(num)) return '0';
+  return new Intl.NumberFormat('en-US').format(num);
+}
+
+export function getInitials(name?: string | null): string {
   if (!name) return 'U';
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
@@ -42,28 +49,24 @@ export function getInitials(name: string | undefined): string {
   return parts[0].slice(0, 2).toUpperCase();
 }
 
-export function getRoleBadgeClass(role: string): string {
-  switch (role) {
-    case 'SYSTEM_ADMIN':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800';
-    case 'STORE_OWNER':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
-    case 'NORMAL_USER':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
-    default:
-      return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300';
-  }
-}
+export function getErrorMessage(err: unknown, fallback: string = 'An unexpected error occurred'): string {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
 
-export function formatRoleName(role: string): string {
-  switch (role) {
-    case 'SYSTEM_ADMIN':
-      return 'System Admin';
-    case 'STORE_OWNER':
-      return 'Store Owner';
-    case 'NORMAL_USER':
-      return 'Normal User';
-    default:
-      return role;
+  const anyErr = err as any;
+  if (anyErr.response?.data?.message) {
+    return anyErr.response.data.message;
   }
+  if (Array.isArray(anyErr.response?.data?.errors) && anyErr.response.data.errors.length > 0) {
+    const first = anyErr.response.data.errors[0];
+    return first.message || first;
+  }
+  if (anyErr.message && !anyErr.message.includes('Network Error')) {
+    return anyErr.message;
+  }
+  if (anyErr.message?.includes('Network Error')) {
+    return 'Unable to connect to the server. Please check your network or try again.';
+  }
+
+  return fallback;
 }

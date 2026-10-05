@@ -1,112 +1,91 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks';
-import { LoadingSpinner } from '../components/ui';
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../utils/constants';
 
-// Layouts
-import { AuthLayout } from '../layouts/AuthLayout';
-import { DashboardLayout } from '../layouts/DashboardLayout';
-import { ProtectedRoute } from './ProtectedRoute';
+// Layout & Route Guards
+import Layout from '../components/Layout/Layout';
+import ProtectedRoute from './ProtectedRoute';
+import RoleProtectedRoute from './RoleProtectedRoute';
+import LoadingState from '../components/LoadingState/LoadingState';
 
-// Lazy-loaded Pages for optimal performance and chunk splitting
-const LoginPage = lazy(() =>
-  import('../pages/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
-);
-const RegisterPage = lazy(() =>
-  import('../pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage }))
-);
-const UserDashboardPage = lazy(() =>
-  import('../pages/user/UserDashboardPage').then((m) => ({ default: m.UserDashboardPage }))
-);
-const AdminDashboardPage = lazy(() =>
-  import('../pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage }))
-);
-const AdminStoresPage = lazy(() =>
-  import('../pages/admin/AdminStoresPage').then((m) => ({ default: m.AdminStoresPage }))
-);
-const AdminUsersPage = lazy(() =>
-  import('../pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage }))
-);
-const OwnerDashboardPage = lazy(() =>
-  import('../pages/owner/OwnerDashboardPage').then((m) => ({ default: m.OwnerDashboardPage }))
-);
-const SettingsPage = lazy(() =>
-  import('../pages/settings/SettingsPage').then((m) => ({ default: m.SettingsPage }))
-);
-const NotFoundPage = lazy(() =>
-  import('../pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
-);
+// Pages
+import Login from '../pages/auth/Login';
+import Signup from '../pages/auth/Signup';
+import AdminDashboard from '../pages/admin/Dashboard';
+import AdminUsers from '../pages/admin/Users';
+import AdminStores from '../pages/admin/Stores';
+import Stores from '../pages/user/Stores';
+import OwnerDashboard from '../pages/owner/Dashboard';
+import ChangePassword from '../pages/account/ChangePassword';
+import NotFound from '../pages/NotFound';
 
-const SuspenseLoader: React.FC = () => (
-  <div className="py-20 flex justify-center items-center">
-    <LoadingSpinner size="md" />
-  </div>
-);
-
+// Root URL dynamic dispatcher according to role
 const RootRedirect: React.FC = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, role, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <LoadingSpinner fullPage label="Initializing Revora..." />;
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingState label="Initializing Revora..." size="lg" />
+      </div>
+    );
   }
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  switch (user.role) {
-    case 'SYSTEM_ADMIN':
+  switch (role) {
+    case ROLES.SYSTEM_ADMIN:
       return <Navigate to="/admin/dashboard" replace />;
-    case 'STORE_OWNER':
+    case ROLES.STORE_OWNER:
       return <Navigate to="/owner/dashboard" replace />;
-    case 'NORMAL_USER':
+    case ROLES.NORMAL_USER:
     default:
-      return <Navigate to="/user/dashboard" replace />;
+      return <Navigate to="/stores" replace />;
   }
 };
 
 export const AppRoutes: React.FC = () => {
   return (
-    <Suspense fallback={<SuspenseLoader />}>
-      <Routes>
-        {/* Root redirect */}
-        <Route path="/" element={<RootRedirect />} />
-        <Route path="/dashboard" element={<RootRedirect />} />
+    <Routes>
+      {/* Root Entry Point */}
+      <Route path="/" element={<RootRedirect />} />
 
-        {/* Public Auth routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
+      {/* Public Authentication Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
 
-        {/* Authenticated Dashboard routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
-            {/* Normal User Dashboard */}
-            <Route element={<ProtectedRoute allowedRoles={['NORMAL_USER']} />}>
-              <Route path="/user/dashboard" element={<UserDashboardPage />} />
-            </Route>
-
-            {/* System Admin Dashboard */}
-            <Route element={<ProtectedRoute allowedRoles={['SYSTEM_ADMIN']} />}>
-              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-              <Route path="/admin/stores" element={<AdminStoresPage />} />
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-            </Route>
-
-            {/* Store Owner Dashboard */}
-            <Route element={<ProtectedRoute allowedRoles={['STORE_OWNER']} />}>
-              <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
-            </Route>
-
-            {/* Common Authenticated Routes */}
-            <Route path="/settings" element={<SettingsPage />} />
+      {/* Authenticated Application Routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          {/* System Administrator Routes */}
+          <Route element={<RoleProtectedRoute allowedRoles={[ROLES.SYSTEM_ADMIN]} />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/stores" element={<AdminStores />} />
           </Route>
-        </Route>
 
-        {/* 404 Catch-All */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Suspense>
+          {/* Normal Customer Store Discovery & Rating Routes */}
+          <Route element={<RoleProtectedRoute allowedRoles={[ROLES.NORMAL_USER]} />}>
+            <Route path="/stores" element={<Stores />} />
+          </Route>
+
+          {/* Merchant Store Owner Routes */}
+          <Route element={<RoleProtectedRoute allowedRoles={[ROLES.STORE_OWNER]} />}>
+            <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+          </Route>
+
+          {/* Shared Authenticated Account Security */}
+          <Route path="/account/password" element={<ChangePassword />} />
+        </Route>
+      </Route>
+
+      {/* 404 Catch All */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
+
+export default AppRoutes;

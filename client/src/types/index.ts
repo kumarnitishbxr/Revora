@@ -1,4 +1,11 @@
-export type Role = 'SYSTEM_ADMIN' | 'NORMAL_USER' | 'STORE_OWNER';
+// ============================================================================
+// REVORA CORE DATA TYPES
+// Mapped exactly to Backend Models & API Responses
+// ============================================================================
+
+import { UserRole } from '../utils/constants';
+
+export type Role = UserRole;
 
 export interface User {
   id: number;
@@ -7,7 +14,7 @@ export interface User {
   address: string;
   role: Role;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   storeName?: string | null;
   storeRating?: number | null;
 }
@@ -20,6 +27,7 @@ export interface Store {
   createdAt: string;
   updatedAt?: string;
   overallRating: number;
+  averageRating?: number;
   totalRatings: number;
   userRating?: number | null;
   ownerId?: number;
@@ -27,7 +35,7 @@ export interface Store {
     id: number;
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 export interface Rating {
@@ -59,7 +67,7 @@ export interface OwnerDashboardData {
     email: string;
     address: string;
     createdAt: string;
-  };
+  } | null;
   averageRating: number;
   ratingCount: number;
   ratingUsers: RatingUser[];
@@ -81,17 +89,12 @@ export interface PaginationMeta {
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
-  data?: T;
+  data: T;
 }
 
 export interface PaginatedResponse<T> {
   success: boolean;
+  message?: string;
   data: T[];
   pagination: PaginationMeta;
-}
-
-export interface ApiErrorResponse {
-  success: false;
-  message: string;
-  errors?: Array<{ field?: string; message: string }>;
 }
