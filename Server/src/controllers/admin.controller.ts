@@ -100,7 +100,7 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction):
               )
             : 0;
       }
-      const { ownedStore, ...userData } = u;
+      const { ownedStore: _ownedStore, ...userData } = u;
       return {
         ...userData,
         storeName,
@@ -169,7 +169,7 @@ export const getUserById = async (
             )
           : 0;
     }
-    const { ownedStore, ...userData } = user;
+    const { ownedStore: _ownedStore, ...userData } = user;
 
     res.status(200).json({
       success: true,
